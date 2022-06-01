@@ -1,0 +1,77 @@
+Metadata-Version: 2.1
+Name: Telegram-Bot8
+Version: 0.2.6
+Summary: Python package to utilizes the telegram API to easily add commands and person other actions
+Home-page: https://github.com/AppDevIn/TelegramBot
+Author: AppDevIn Sliver
+Author-email: teamprojectlive@gmail.com
+License: UNKNOWN
+Project-URL: Bug Tracker, https://github.com/AppDevIn/TelegramBot/issues
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: setuptools (>=42)
+Requires-Dist: wheel
+Requires-Dist: certifi (==2021.10.8)
+Requires-Dist: charset-normalizer (==2.0.9)
+Requires-Dist: idna (==3.3)
+Requires-Dist: requests (==2.26.0)
+Requires-Dist: urllib3 (==1.26.7)
+
+# TelegramBot
+
+## Project Description
+
+This project uses the telegram bot API to create a bot service
+
+## Installation
+
+To install with pip <br>
+
+```
+$ pip install Telegram-Bot8
+```
+
+## Usage
+
+```python
+from TelegramBot8 import Message, TeleBot, Update, ParseMode
+
+API_KEY = os.getenv('telegramApiKey')
+bot = TeleBot(API_KEY)
+
+@bot.add_command_helper(command="/hi")
+def hi(message: Message):
+    bot.send_message(message.chat.getID(), "Hello")
+
+
+@bot.add_command_menu_helper(command="/bye", description="Just testing added command")
+def bye(message: Message):
+    bot.send_message(message.chat.getID(), "Bye")
+
+
+@bot.add_regex_helper(regex="^hi$")
+def regex(message: Message):
+    bot.send_message(message.chat.getID(), "Hello")
+
+bot.poll()
+```
+
+## Credits
+
+<table>
+  <tr>
+        <td align="center"><a href="https://github.com/appdevin"><img src="https://avatars1.githubusercontent.com/u/34540492?s=460&u=6b2d7e8346afc28bfd8e591d93fd548895c720af&v=4" width="100px;" alt=""/><br /><sub><b>Jeyavishnu</b></sub></a><br />
+    </td>
+  </tr>
+</table>
+
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+
