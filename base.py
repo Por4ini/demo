@@ -1,19 +1,22 @@
 import asyncio
+from aiogram.dispatcher import FSMContext
+from states import register
+
 from get_message import get_info
 from config import OLX_TOKEN, BOT_TOKEN
 import logging
 from aiogram import Bot, Dispatcher, executor, types
 import json
-#___________________________________
-# Бот которые собрает информацию из user_data и отправляет пользователю. Нужно дописать регистрацию, пока хз как через телегу принимать сообщения.
-#__________________________________
-OLX_TOKEN = OLX_TOKEN
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from registration import new, del_user, refresh_token
+import requests
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-
-# Initialize bot and dispatcher
+storage = MemoryStorage()
 bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher(bot)
+
+dp = Dispatcher(bot, storage=storage)
 
 
 async def on_startup(_):
@@ -23,19 +26,22 @@ async def on_startup(_):
 @dp.message_handler(commands=['start', 'help'])
 async def command_start(message: types.Message):
     await bot.send_message(message.from_user.id,
-                           "Добавь пользователя командой  /registration\nПроверь активных пользователей командой /info\nЗапусти оповещение командой /go")
+                           "Добавь пользователя командой  /register\nПроверь активных пользователей командой /info\nЗапусти оповещение командой /go\nЧто бы удалить аккаунт Введи /del")
 
 
 @dp.message_handler(commands=['go'])
 async def go(message: types.Message):
     while True:
 
+        await asyncio.sleep(15)
+
+        refresh_token()
+
         with open("user_data.json", encoding="utf-8") as f:
             json_data = json.load(f)
-            for item in json_data['tokens']:  #Хочу что бы отрабатывал сперва один токен, затем второй. Сейчас отрабатывает только первый!
+            for item in json_data['tokens']:
                 token = item['access_token']
                 get_info(token)
-
                 for item in json_data['message']:
                     if item['send'] == 'false':
                         name = item['name']
@@ -50,25 +56,143 @@ async def go(message: types.Message):
                     elif item['send'] == 'true':
                         continue
                     else:
-                        await message
+                        continue
                     with open('user_data.json', 'r+') as f:
                         item['send'] = 'true'
                         f.seek(0)
                         json.dump(json_data, f, indent=4, ensure_ascii=False)
                         f.truncate()
-                print('процесс идет')
 
 
-@dp.message_handler(commands=['registration'])
-async def registration(message: types.Message):
-    await bot.send_message(message.from_user.id, 'Эта функция еще не готова!')
-    user_data = {}
 
-    # with open('user_data.json', 'w', encoding='utf-8') as outfile:
-    #     json.dump(user_data, outfile, indent=2, ensure_ascii=False)
+@dp.message_handler(commands=['go'])
+async def go_token(message: types.Message):
+    while True:
+        await asyncio.sleep(30)
+        refresh_token()
+        print("So good")
+
+
+@dp.message_handler(commands=['register'])
+async def register_(message: types.Message):
+    await message.answer('Введи client_id')
+    await register.test1.set()
+
+
+#
+@dp.message_handler(state=register.test1)
+async def state1(message: types.Message, state: FSMContext):
+    answer = message.text
+    #
+    await state.update_data(test1=answer)
+    await message.answer('Client_secret')
+    await register.test2.set()
+
+
+#
+@dp.message_handler(state=register.test2)
+async def state1(message: types.Message, state: FSMContext):
+    answer = message.text
+
+    await state.update_data(test2=answer)
+    await message.answer('Refresh_token')
+    await register.test3.set()
+
+
+@dp.message_handler(state=register.test3)
+async def state1(message: types.Message, state: FSMContext):
+    answer = message.text
+
+    await state.update_data(test3=answer)
+
+    data = await state.get_data()
+    test1 = data.get('test1')
+    test2 = data.get('test2')
+    test3 = data.get('test3')
+    await message.answer(f'client_id--{test1}\n client_secret{test2}\nrefresh_token{test3}')
+
+    user_data = {
+        "grant_type": "refresh_token",
+        "client_id": f"{test1}",
+        "client_secret": f"{test2}",
+        "refresh_token": f"{test3}"
+    }
+    new(user_data)
+    with open("user_data.json", encoding="utf-8") as f:
+        json_data = json.load(f)
+        for item in json_data['users']:
+            client_id = item['client_id']
+            client_secret = item['client_secret']
+            refresh_token = item['refresh_token']
+
+            user_data = {
+                "grant_type": "refresh_token",
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "refresh_token": refresh_token
+            }
+            response = requests.post('https://www.olx.ua/api/open/oauth/token', json=user_data).text
+            callback = json.loads(response)
+            data = {
+                "access_token": 'Bearer ' + callback['access_token']}
+            with open("user_data.json", encoding="utf-8") as f:
+                json_data = json.load(f)
+                count = 0
+                for item in json_data['tokens']:
+                    if item['access_token'] == data['access_token']:
+                        print('Такой token уже существует')
+                        count = +1
+                        break
+                    else:
+                        continue
+
+                if count == 0:
+                    json_data['tokens'].append(data)
+            with open('user_data.json', 'w', encoding='utf-8') as outfile:
+                json.dump(json_data, outfile, indent=2, ensure_ascii=False)
+
+    await state.finish()
+
+
+@dp.message_handler(commands=['info'])
+async def info(message: types.Message):
+    with open("user_data.json", encoding="utf-8") as f:
+        json_data = json.load(f)
+        for item in json_data['users']:
+            client_id = item['client_id']
+            client_secret = item['client_secret']
+            refresh_token = item['refresh_token']
+            await bot.send_message(message.from_user.id, f"Аккаунт:\n"
+                                                         f"client_id:   {client_id}\nclient_secret:  {client_secret}\nrefresh_token:  {refresh_token}")
+
+
+@dp.message_handler(commands=['del'])
+async def delete_(message: types.Message):
+    await message.answer('Введи client_id')
+    await register.del1.set()
+
+
+@dp.message_handler(state=register.del1)
+async def delete_(message: types.Message, state: FSMContext):
+    answer = message.text
+    await state.update_data(del1=answer)
+    data = await state.get_data()
+    del1 = data.get('del1')
+    del_user(del1)
+
+    await state.finish()
+
+
+@dp.message_handler(commands=['stop'])
+async def stop(message: types.Message):
+    await message.answer('Что дальше делаем?')
 
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
     loop = asyncio.get_event_loop()
-    loop.create_task(go(45))
+    try:
+        asyncio.ensure_future(go())
+    finally:
+        print('Close loop')
+        loop.close(stop)

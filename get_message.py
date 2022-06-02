@@ -1,9 +1,7 @@
 import requests
 import json
 
-#____________________________
-# Эта функция отправляет сообщение в user.data если оно не прочитано
-#____________________________
+
 def get_info(token):
     headers = {"Authorization": token,
                "Version": "v 2"}
@@ -12,7 +10,6 @@ def get_info(token):
     my_info = json.loads(response)
     my_name = my_info['data']['name']
     my_phone = my_info['data']['phone']
-
     response = requests.get('https://www.olx.ua/api/partner/threads', headers=headers).text
     chats = json.loads(response)['data']
     for item in chats:
@@ -25,7 +22,6 @@ def get_info(token):
             res = requests.get(link_user, headers=headers).text
             info_user = json.loads(res)['data']
             name = info_user['name']  # имя отправителя
-
             link_advert = f'https://www.olx.ua/api/partner/adverts/{advert_id}'
             res2 = requests.get(link_advert, headers=headers).text
             info_advert = json.loads(res2)['data']
@@ -65,6 +61,5 @@ def get_info(token):
                     json.dump(json_data, outfile, indent=2, ensure_ascii=False)
             else:
                 pass
-
 
 
