@@ -64,12 +64,12 @@ def refresh_token():
                 print('Обнови токен на :', user_data['client_id'])
 
 
-def del_user():
+def del_user(del1):
     with open("user_data.json", encoding="utf-8") as f:
         json_data = json.load(f)
 
     for item in json_data['users']:
-        if item['client_id'] == '200783':
+        if item['client_id'] == del1:
             print('Путін Хуйло')
         else:
             with open('buffer_data.json', encoding='utf-8') as f:
