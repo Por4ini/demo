@@ -1,9 +1,9 @@
 import asyncio
 from aiogram.dispatcher import FSMContext
 from states import register
-
+import time
 from get_message import get_info
-from config import OLX_TOKEN, BOT_TOKEN
+from config import BOT_TOKEN
 import logging
 from aiogram import Bot, Dispatcher, executor, types
 import json
@@ -26,7 +26,7 @@ async def on_startup(_):
 @dp.message_handler(commands=['start', 'help'])
 async def command_start(message: types.Message):
     await bot.send_message(message.from_user.id,
-                           "Добавь пользователя командой  /register\nПроверь активных пользователей командой /info\nЗапусти оповещение командой /go\nЧто бы удалить аккаунт Введи /del")
+                           "Добавь пользователя командой  /register\nПроверь активных пользователей командой /info\nЗапусти оповещение командой /go\nЧто бы удалить аккаунт Введи /del\n Если что то не рабоатет то /error укажет на ошибку\nУдачи")
 
 
 @dp.message_handler(commands=['go'])
@@ -36,7 +36,7 @@ async def go(message: types.Message):
         await asyncio.sleep(10)
         print('|')
         refresh_token()
-        
+
         with open("user_data.json", encoding="utf-8") as f:
             json_data = json.load(f)
             for item in json_data['tokens']:
@@ -64,11 +64,10 @@ async def go(message: types.Message):
                         f.truncate()
 
 
-
 @dp.message_handler(commands=['go'])
 async def go_token(message: types.Message):
     while True:
-        await asyncio.sleep(30)
+        await asyncio.sleep(2)
         refresh_token()
 
 
@@ -163,7 +162,7 @@ async def info(message: types.Message):
             await bot.send_message(message.from_user.id, f"Аккаунт:\n"
                                                          f"client_id:   {client_id}\nclient_secret:  {client_secret}\nrefresh_token:  {refresh_token}")
             print("Пошла инфа")
-            
+
 
 @dp.message_handler(commands=['del'])
 async def delete_(message: types.Message):
@@ -181,19 +180,27 @@ async def delete_(message: types.Message, state: FSMContext):
     print("-1")
     await state.finish()
 
-    
 
 @dp.message_handler(commands=['stop'])
 async def stop(message: types.Message):
     await message.answer('Что дальше делаем?')
 
 
+@dp.message_handler(commands=['error'])
+async def error(message: types.Message):
+    await message.answer('Пора обновить токены')
+
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
     loop = asyncio.get_event_loop()
     try:
         asyncio.ensure_future(go())
-    except:
-        time.sleep(15)
+
+    except KeyError:
+        asyncio.ensure_future(error())
+
+
+    except NameError:
+        asyncio.ensure_future(register_())
     finally:
-        loop.close(stop)
+        loop.close(stop())

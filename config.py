@@ -7,5 +7,4 @@ with open("user_data.json", encoding="utf-8") as f:
     for item in json_data['tokens']:
         OLX_TOKEN = item['access_token']
 
-BOT_TOKEN = '5565987951:AAG62U6BwKd_mkIItBf08GzCcEVeaDZi8o4'
-print(OLX_TOKEN)
+BOT_TOKEN = '1919741382:AAGKh7amERxr_31v7XaPZT17U3wahRKT8Ig'
