@@ -10,4 +10,5 @@ Second... start to base.py
 
 /start
 
+Get OLX token  https://developer.olx.ua
 add your OLX data ang enter /go
