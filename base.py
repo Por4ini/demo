@@ -20,7 +20,7 @@ dp = Dispatcher(bot, storage=storage)
 
 
 async def on_startup(_):
-    print('Начнем работу')
+    print('Погнали')
 
 
 @dp.message_handler(commands=['start', 'help'])
@@ -33,10 +33,10 @@ async def command_start(message: types.Message):
 async def go(message: types.Message):
     while True:
 
-        await asyncio.sleep(15)
-
+        await asyncio.sleep(10)
+        print('|')
         refresh_token()
-
+        
         with open("user_data.json", encoding="utf-8") as f:
             json_data = json.load(f)
             for item in json_data['tokens']:
@@ -70,7 +70,6 @@ async def go_token(message: types.Message):
     while True:
         await asyncio.sleep(30)
         refresh_token()
-        print("So good")
 
 
 @dp.message_handler(commands=['register'])
@@ -140,7 +139,6 @@ async def state1(message: types.Message, state: FSMContext):
                 count = 0
                 for item in json_data['tokens']:
                     if item['access_token'] == data['access_token']:
-                        print('Такой token уже существует')
                         count = +1
                         break
                     else:
@@ -150,7 +148,7 @@ async def state1(message: types.Message, state: FSMContext):
                     json_data['tokens'].append(data)
             with open('user_data.json', 'w', encoding='utf-8') as outfile:
                 json.dump(json_data, outfile, indent=2, ensure_ascii=False)
-
+    print("Новый в семье")
     await state.finish()
 
 
@@ -164,7 +162,8 @@ async def info(message: types.Message):
             refresh_token = item['refresh_token']
             await bot.send_message(message.from_user.id, f"Аккаунт:\n"
                                                          f"client_id:   {client_id}\nclient_secret:  {client_secret}\nrefresh_token:  {refresh_token}")
-
+            print("Пошла инфа")
+            
 
 @dp.message_handler(commands=['del'])
 async def delete_(message: types.Message):
@@ -179,9 +178,10 @@ async def delete_(message: types.Message, state: FSMContext):
     data = await state.get_data()
     del1 = data.get('del1')
     del_user(del1)
-
+    print("-1")
     await state.finish()
 
+    
 
 @dp.message_handler(commands=['stop'])
 async def stop(message: types.Message):
@@ -193,6 +193,7 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     try:
         asyncio.ensure_future(go())
+    except:
+        time.sleep(15)
     finally:
-        print('Close loop')
         loop.close(stop)
